@@ -3,11 +3,118 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
+
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js" // Add "-js" here
+ 
 }
 
 datasource db {
   provider = "postgresql"
+}
+enum Role {
+  ADMIN
+  VENDOR
+  CUSTOMER
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  DELIVERED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+
+  vendorProfile VendorProfile?
+  orders        Order[]
+  posts         CommunityPost[]
+}
+
+model VendorProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  farmName  String
+  location  String
+  status    Status   @default(PENDING)
+
+  user      User @relation(fields: [userId], references: [id])
+
+  products  Product[]
+  spaces    RentalSpace[]
+  certs     Certification[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  quantity    Int
+  category    String?
+  isCertified Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  vendorId String
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id])
+
+  orders Order[]
+}
+
+model RentalSpace {
+  id        String   @id @default(uuid())
+  location  String
+  size      String
+  price     Float
+  available Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  vendorId String
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id])
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime    @default(now())
+
+  userId    String
+  productId String
+
+  user    User    @relation(fields: [userId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model CommunityPost {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+}
+
+model Certification {
+  id              String   @id @default(uuid())
+  certifyingBody  String
+  documentUrl     String
+  status          Status   @default(PENDING)
+  createdAt       DateTime @default(now())
+
+  vendorId String
+  vendor   VendorProfile @relation(fields: [vendorId], references: [id])
 }
