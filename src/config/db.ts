@@ -1,23 +1,33 @@
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { Pool } from "pg";
+import { env } from "./env";
 
-const connectionString = `${process.env.DATABASE_URL}`;
+//  DB connection
+const connectionString = env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not defined in environment variables");
+}
+const pool = new Pool({
+  connectionString: connectionString,
+});
 
-const pool = new pg.Pool({ connectionString });
+// Prisma adapter
 const adapter = new PrismaPg(pool);
 
+//  global singleton (prevents multiple connections in dev)
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-export const prisma =
+const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    adapter, // ✅ Pass the adapter here
-    log: ["query", "error", "warn", "info"],
+    adapter,
+    log: ["error", "warn"],
   });
 
+// 🧪 prevent re-init in dev
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }

@@ -5,7 +5,7 @@ import sendResponse from "../utils/sendResponse";
 const router: Router = Router();
 
 // Example test route
-router.get("/test", async (req, res) => {
+router.get("/", async (req, res) => {
   const users = await prisma.user.findMany();
   sendResponse(res, {
     success: true,
